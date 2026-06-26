@@ -6,6 +6,7 @@ on:
       - main
       - feat/**
       - fix/**
+      - ci/**
     tags:
       - "v*"
   pull_request:
@@ -71,6 +72,12 @@ jobs:
           echo "@xartifact:registry=https://npm.pkg.github.com" > .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
+      - name: Replace workspace deps with published versions
+        run: |
+          # Replace workspace:* with ^0.1.0 before publish
+          find packages -name 'package.json' ! -path '*/node_modules/*' -exec \
+            sed -i 's/"workspace:\*"/"^0.1.0"/g' {} +
+
       - name: Publish @xartifact/x-tinker-shared
         run: bun publish
         working-directory: packages/shared
@@ -78,6 +85,12 @@ jobs:
       - name: Publish @xartifact/x-tinker-sdk
         run: bun publish
         working-directory: packages/sdk
+
+      - name: Restore workspace deps
+        if: always()
+        run: |
+          # Restore workspace:* from lockfile
+          bun install --frozen-lockfile
 
   docker:
     needs: check
