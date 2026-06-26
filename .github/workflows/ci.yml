@@ -77,12 +77,6 @@ jobs:
           cd packages/shared && npm version patch --no-git-tag-version && cd -
           cd packages/sdk && npm version patch --no-git-tag-version && cd -
 
-      - name: Resolve SDK dependency to shared version
-        run: |
-          SHARED_VER=$(jq -r '.version' packages/shared/package.json)
-          jq ".dependencies[\"@xartifact/x-tinker-shared\"] = \"^$SHARED_VER\"" packages/sdk/package.json > /tmp/sdk-pkg.json
-          mv /tmp/sdk-pkg.json packages/sdk/package.json
-
       - name: Publish @xartifact/x-tinker-shared
         run: bun publish
         working-directory: packages/shared
@@ -93,7 +87,7 @@ jobs:
 
       - name: Restore workspace deps
         if: always()
-        run: bun install --frozen-lockfile
+        run: bun install
 
   docker:
     needs: check
