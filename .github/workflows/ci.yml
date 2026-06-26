@@ -72,11 +72,6 @@ jobs:
           echo "@xartifact:registry=https://npm.pkg.github.com" > .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
-      - name: Bump versions
-        run: |
-          cd packages/shared && npm version patch --no-git-tag-version && cd -
-          cd packages/sdk && npm version patch --no-git-tag-version && cd -
-
       - name: Publish @xartifact/x-tinker-shared
         run: bun publish
         working-directory: packages/shared
