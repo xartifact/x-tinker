@@ -72,18 +72,16 @@ jobs:
           echo "@xartifact:registry=https://npm.pkg.github.com" > .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
-      - name: Prepare packages for publish
+      - name: Bump versions
         run: |
-          # Bump patch version and replace workspace:* with ^0.1.0
-          for pkg in packages/shared packages/sdk; do
-            cd $pkg
-            # Auto patch bump without git tag
-            npm version patch --no-git-tag-version
-            cd -
-          done
-          # Replace workspace:* with published version
-          find packages -name 'package.json' ! -path '*/node_modules/*' -exec \
-            sed -i 's/"workspace:\*"/"^0.1.0"/g' {} \;
+          cd packages/shared && npm version patch --no-git-tag-version && cd -
+          cd packages/sdk && npm version patch --no-git-tag-version && cd -
+
+      - name: Resolve SDK dependency to shared version
+        run: |
+          SHARED_VER=$(jq -r '.version' packages/shared/package.json)
+          jq ".dependencies[\"@xartifact/x-tinker-shared\"] = \"^$SHARED_VER\"" packages/sdk/package.json > /tmp/sdk-pkg.json
+          mv /tmp/sdk-pkg.json packages/sdk/package.json
 
       - name: Publish @xartifact/x-tinker-shared
         run: bun publish
