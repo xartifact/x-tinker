@@ -1,0 +1,26 @@
+{
+  "name": "@xartifact/x-tinker-server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "bun run --watch src/index.ts",
+    "start": "bun run src/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4",
+    "@hono/trpc-server": "^0",
+    "@trpc/server": "^11",
+    "zod": "^3",
+    "drizzle-orm": "^0.45.1",
+    "@xartifact/x-tinker-shared": "workspace:*",
+    "@xartifact/x-tinker-core": "workspace:*",
+    "@xartifact/x-tinker-db": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/bun": "latest"
+  }
+}

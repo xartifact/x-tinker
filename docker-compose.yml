@@ -1,0 +1,32 @@
+services:
+  tinker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: x-tinker
+    ports:
+      - "${PORT:-3200}:3200"
+    environment:
+      NODE_ENV: production
+      PORT: 3200
+      DB_DIR: /data
+      LLM_PROVIDER: ${LLM_PROVIDER:-openai}
+      LLM_MODEL: ${LLM_MODEL:-gpt-4o}
+      LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-}
+      PROJECT_A_PATH: ${PROJECT_A_PATH:-/project-a}
+    volumes:
+      - tinker_data:/data
+      # Mount Project A source code if needed for reading source context
+      - ${PROJECT_A_HOST_PATH:-./project-a}:/project-a:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3200/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  tinker_data:
+    driver: local
