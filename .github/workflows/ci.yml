@@ -74,9 +74,9 @@ jobs:
 
       - name: Replace workspace deps with published versions
         run: |
-          # Replace workspace:* with ^0.1.0 before publish
+          # Replace workspace:* with ^0.1.0 in all package.json files
           find packages -name 'package.json' ! -path '*/node_modules/*' -exec \
-            sed -i 's/"workspace:\*"/"^0.1.0"/g' {} +
+            sed -i 's/"workspace:\*"/"^0.1.0"/g' {} \;
 
       - name: Publish @xartifact/x-tinker-shared
         run: bun publish
