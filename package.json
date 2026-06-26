@@ -1,7 +1,7 @@
 {
   "name": "x-tinker",
   "version": "0.1.0",
-  "private": true,
+  "private": false,
   "description": "Self-healing pipeline: runtime error → auto fix → deploy",
   "workspaces": [
     "apps/*",
