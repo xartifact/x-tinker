@@ -11,6 +11,7 @@
     "dev:server": "cd apps/server && bun run dev",
     "dev:ui": "cd apps/ui && bun run dev",
     "dev": "bun run dev:server & bun run dev:ui",
+    "build": "bun run --filter './packages/*' build && bun run --filter './apps/*' build",
     "build:ui": "cd apps/ui && bun run build",
     "typecheck": "bun run --filter './packages/*' typecheck && bun run --filter './apps/*' typecheck",
     "format": "prettier --write \"**/*.{ts,tsx,json,md}\""
