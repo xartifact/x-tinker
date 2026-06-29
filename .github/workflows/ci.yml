@@ -39,7 +39,7 @@ jobs:
   publish-sdk:
     needs: check
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || startsWith(github.ref, 'refs/heads/ci/'))
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') || github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v'))
     permissions:
       contents: read
       packages: write
@@ -64,7 +64,7 @@ jobs:
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
       - name: Set prerelease version (ci/* branches)
-        if: startsWith(github.ref, 'refs/heads/ci/')
+        if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v')
         run: |
           SHA=$(git rev-parse --short HEAD)
           VER_SHARED=$(jq -r '.version' packages/shared/package.json)
@@ -73,11 +73,11 @@ jobs:
           (cd packages/sdk && bun pm version "$VER_SDK-ci.$SHA" --no-git-tag-version)
 
       - name: Publish @xartifact/x-tinker-shared
-        run: bun publish --tag ${{ startsWith(github.ref, 'refs/heads/ci/') && 'next' || 'latest' }}
+        run: bun publish --tag ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v') && 'next' || 'latest' }}
         working-directory: packages/shared
 
       - name: Publish @xartifact/x-tinker-sdk
-        run: bun publish --tag ${{ startsWith(github.ref, 'refs/heads/ci/') && 'next' || 'latest' }}
+        run: bun publish --tag ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v') && 'next' || 'latest' }}
         working-directory: packages/sdk
 
       - name: Restore workspace deps
@@ -87,7 +87,7 @@ jobs:
   docker:
     needs: check
     runs-on: ubuntu-latest
-    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/heads/ci/'))
+    if: github.event_name != 'pull_request' && (github.ref == 'refs/heads/main' || github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v'))
     permissions:
       contents: read
       packages: write
