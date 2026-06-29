@@ -63,7 +63,7 @@ jobs:
           echo "@xartifact:registry=https://npm.pkg.github.com" > .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
-      - name: Set prerelease version (ci/* branches)
+      - name: Set prerelease version
         if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v')
         run: |
           SHA=$(git rev-parse --short HEAD)
@@ -71,6 +71,12 @@ jobs:
           VER_SDK=$(jq -r '.version' packages/sdk/package.json)
           (cd packages/shared && bun pm version "$VER_SHARED-ci.$SHA" --no-git-tag-version)
           (cd packages/sdk && bun pm version "$VER_SDK-ci.$SHA" --no-git-tag-version)
+
+      - name: Pin sdk dependency on shared to exact published version
+        run: |
+          SHARED_VER=$(jq -r '.version' packages/shared/package.json)
+          jq ".dependencies[\"@xartifact/x-tinker-shared\"] = \"$SHARED_VER\"" packages/sdk/package.json > /tmp/sdk.json
+          mv /tmp/sdk.json packages/sdk/package.json
 
       - name: Publish @xartifact/x-tinker-shared
         run: bun publish --tag ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v') && 'next' || 'latest' }}
