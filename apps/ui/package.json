@@ -34,10 +34,10 @@
     "@tailwindcss/vite": "^4.3.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitejs/plugin-react": "^4",
+    "@vitejs/plugin-react": "^6",
     "tailwindcss": "^4.3.1",
     "tsx": "^4",
     "typescript": "^5.3.3",
-    "vite": "^6"
+    "vite": "^8"
   }
 }

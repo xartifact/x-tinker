@@ -22,7 +22,7 @@
     "dist"
   ],
   "scripts": {
-    "build": "tsc",
+    "build": "vite build",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -34,6 +34,8 @@
   "devDependencies": {
     "typescript": "^5.3.3",
     "@types/bun": "latest",
-    "hono": "^4.12.27"
+    "hono": "^4.12.27",
+    "vite": "^8",
+    "vite-plugin-dts": "^5"
   }
 }
