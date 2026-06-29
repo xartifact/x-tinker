@@ -67,16 +67,14 @@ jobs:
         if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v')
         run: |
           SHA=$(git rev-parse --short HEAD)
-          VER_SHARED=$(jq -r '.version' packages/shared/package.json)
-          VER_SDK=$(jq -r '.version' packages/sdk/package.json)
-          (cd packages/shared && bun pm version "$VER_SHARED-ci.$SHA" --no-git-tag-version)
-          (cd packages/sdk && bun pm version "$VER_SDK-ci.$SHA" --no-git-tag-version)
+          VER=$(jq -r '.version' packages/shared/package.json)
+          (cd packages/shared && bun pm version "$VER-ci.$SHA" --no-git-tag-version)
+          (cd packages/sdk && bun pm version "$VER-ci.$SHA" --no-git-tag-version)
 
-      - name: Pin sdk dependency on shared to exact published version
+      - name: Replace workspace:* with published version (workaround for oven-sh/bun#20477)
         run: |
-          SHARED_VER=$(jq -r '.version' packages/shared/package.json)
-          jq ".dependencies[\"@xartifact/x-tinker-shared\"] = \"$SHARED_VER\"" packages/sdk/package.json > /tmp/sdk.json
-          mv /tmp/sdk.json packages/sdk/package.json
+          VER=$(jq -r '.version' packages/shared/package.json)
+          sed -i "s/workspace:\*/$VER/g" packages/sdk/package.json
 
       - name: Publish @xartifact/x-tinker-shared
         run: bun publish --tag ${{ github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v') && 'next' || 'latest' }}
