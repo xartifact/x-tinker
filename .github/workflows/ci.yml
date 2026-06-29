@@ -63,12 +63,21 @@ jobs:
           echo "@xartifact:registry=https://npm.pkg.github.com" > .npmrc
           echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
 
+      - name: Set prerelease version (ci/* branches)
+        if: startsWith(github.ref, 'refs/heads/ci/')
+        run: |
+          SHA=$(git rev-parse --short HEAD)
+          VER_SHARED=$(jq -r '.version' packages/shared/package.json)
+          VER_SDK=$(jq -r '.version' packages/sdk/package.json)
+          (cd packages/shared && bun pm version "$VER_SHARED-ci.$SHA" --no-git-tag-version)
+          (cd packages/sdk && bun pm version "$VER_SDK-ci.$SHA" --no-git-tag-version)
+
       - name: Publish @xartifact/x-tinker-shared
-        run: bun publish
+        run: bun publish --tag ${{ startsWith(github.ref, 'refs/heads/ci/') && 'next' || 'latest' }}
         working-directory: packages/shared
 
       - name: Publish @xartifact/x-tinker-sdk
-        run: bun publish
+        run: bun publish --tag ${{ startsWith(github.ref, 'refs/heads/ci/') && 'next' || 'latest' }}
         working-directory: packages/sdk
 
       - name: Restore workspace deps
