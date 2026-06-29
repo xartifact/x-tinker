@@ -11,7 +11,8 @@
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": true,
+    "customConditions": ["source"]
   },
   "include": ["src", "vite-env.d.ts", "vite.config.ts"]
 }
