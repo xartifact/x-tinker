@@ -2,7 +2,7 @@
 
 Self-healing pipeline: runtime error → auto fix → deploy.
 
-x-tinker 是一个自愈流水线系统。当项目 A（如 x-llm-gateway）在运行时产生程序错误或 Bug，会自动上报到 x-tinker。x-tinker 根据对应的项目源码和错误日志、trace 等信息，通过 Coding Agent 修复代码，推送到 CI/CD 流水线，最终更新和部署程序。
+x-tinker 是一个自愈流水线系统。当项目 A（如 x-herald）在运行时产生程序错误或 Bug，会自动上报到 x-tinker。x-tinker 根据对应的项目源码和错误日志、trace 等信息，通过 Coding Agent 修复代码，推送到 CI/CD 流水线，最终更新和部署程序。
 
 ## 产品定位
 
@@ -126,7 +126,7 @@ Step 7: 将修复结果写入数据库
 x-tinker 支持两种方式配置 LLM：
 
 1. **直接连接** — 配置 `protocol`（openai/anthropic）、`model`、`baseUrl`、`apiKey`，直接调用 LLM API
-2. **通过 x-llm-gateway** — 将 `baseUrl` 指向 x-llm-gateway 的 endpoint，由 x-llm-gateway 做协议转换和路由
+2. **通过 x-herald** — 将 `baseUrl` 指向 x-herald 的 endpoint，由 x-herald 做协议转换和路由
 
 ### 6. `apps/ui` — Web 配置面板
 
@@ -203,7 +203,7 @@ app.use('*', createHonoErrorMiddleware({
 ```bash
 # 必须
 X_TINKER_URL=http://x-tinker:3200
-X_TINKER_PROJECT_ID=x-llm-gateway
+X_TINKER_PROJECT_ID=x-herald
 ```
 
 ## 技术栈

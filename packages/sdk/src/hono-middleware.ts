@@ -12,7 +12,7 @@ import { ErrorReporter } from "./reporter.js";
  *
  * app.use("*", createHonoErrorMiddleware({
  *   serverUrl: "http://localhost:3200",
- *   projectId: "x-llm-gateway",
+ *   projectId: "x-herald",
  * }));
  * ```
  */

@@ -171,7 +171,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     temperature: 0.1,
   },
   repo: {
-    projectPath: "/Users/binzhan/Workspaces/github/xartifact/x-llm-gateway",
+    projectPath: "/Users/binzhan/Workspaces/github/xartifact/x-herald",
     remote: "",
     branchPrefix: "auto-fix",
   },
