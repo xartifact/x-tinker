@@ -58,11 +58,6 @@ jobs:
       - name: Build
         run: bun run --filter './packages/*' build
 
-      - name: Configure bun for GitHub Packages
-        run: |
-          echo "@xartifact:registry=https://npm.pkg.github.com" > .npmrc
-          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
-
       - name: Set prerelease version
         if: github.ref != 'refs/heads/main' && !startsWith(github.ref, 'refs/tags/v')
         run: |
@@ -76,11 +71,30 @@ jobs:
           VER=$(jq -r '.version' packages/shared/package.json)
           sed -i "s/workspace:\*/$VER/g" packages/sdk/package.json
 
-      - name: Publish @xartifact/x-tinker-shared
+      # --- Publish to GitHub Packages ---
+      - name: Configure for GitHub Packages
+        run: |
+          echo "@xartifact:registry=https://npm.pkg.github.com" > .npmrc
+          echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
+
+      - name: Publish @xartifact/x-tinker-shared to GitHub Packages
         run: bun publish --tag latest
         working-directory: packages/shared
 
-      - name: Publish @xartifact/x-tinker-sdk
+      - name: Publish @xartifact/x-tinker-sdk to GitHub Packages
+        run: bun publish --tag latest
+        working-directory: packages/sdk
+
+      # --- Publish to npm ---
+      - name: Configure for npm
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
+
+      - name: Publish @xartifact/x-tinker-shared to npm
+        run: bun publish --tag latest
+        working-directory: packages/shared
+
+      - name: Publish @xartifact/x-tinker-sdk to npm
         run: bun publish --tag latest
         working-directory: packages/sdk
 
@@ -135,3 +149,68 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  deploy:
+    needs: docker
+    runs-on: self-hosted
+    if: github.event_name != 'pull_request' && !startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Deploy to x99 (~/Docker/x-tinker)
+        env:
+          # main 部署 latest；其他分支（ci/**, feat/**, fix/**）部署 alpha
+          IMAGE_TAG: ${{ (github.ref == 'refs/heads/main') && 'latest' || 'alpha' }}
+          CONTAINER: x-tinker
+          DEPLOY_DIR: ~/Docker/x-tinker
+        run: |
+          cd ${{ env.DEPLOY_DIR }}
+
+          echo "Pulling image tag: $IMAGE_TAG"
+          docker pull ghcr.io/${{ github.repository }}:$IMAGE_TAG
+
+          echo "Starting services..."
+          docker-compose up -d
+
+          echo "Waiting for service to be ready..."
+          MAX_RETRIES=30
+          RETRY_COUNT=0
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            CONTAINER_STATUS=$(docker inspect --format='{{.State.Status}}' ${{ env.CONTAINER }} 2>/dev/null || echo "unknown")
+            if [ "$CONTAINER_STATUS" = "exited" ] || [ "$CONTAINER_STATUS" = "dead" ]; then
+              echo "✗ Container has stopped (status: $CONTAINER_STATUS)"
+              echo "Container logs:"
+              docker-compose logs ${{ env.CONTAINER }}
+              exit 1
+            fi
+
+            # 容器内健康探针（容器内端口始终 3200）
+            HTTP_CODE=$(docker exec ${{ env.CONTAINER }} bun -e "fetch('http://localhost:3200/health').then(r=>console.log(r.status)).catch(()=>console.log(0))" 2>/dev/null || echo "0")
+
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✓ Service is healthy (HTTP 200)"
+              break
+            fi
+
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -eq $MAX_RETRIES ]; then
+              echo "✗ Health check timeout after $MAX_RETRIES attempts (150s)"
+              echo "Last HTTP code: $HTTP_CODE"
+              echo "Container logs:"
+              docker-compose logs --tail=50 ${{ env.CONTAINER }}
+              exit 1
+            fi
+
+            echo "  Attempt $RETRY_COUNT/$MAX_RETRIES (HTTP: $HTTP_CODE), retrying in 5s..."
+            sleep 5
+          done
+
+          echo ""
+          echo "Container status:"
+          docker-compose ps
+
+          echo ""
+          echo "Cleaning up old images..."
+          docker image prune -f
+
+          echo ""
+          echo "✓ Deployment completed successfully"

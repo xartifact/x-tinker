@@ -14,11 +14,15 @@ services:
       LLM_MODEL: ${LLM_MODEL:-gpt-4o}
       LLM_API_KEY: ${LLM_API_KEY:-}
       LLM_BASE_URL: ${LLM_BASE_URL:-}
-      PROJECT_A_PATH: ${PROJECT_A_PATH:-/project-a}
+      # Legacy single-project fallback, used by the default project when it
+      # has no repo.projectPath in config. For multi-project, set each
+      # project's repo.projectPath to /projects/<name> in the config panel.
+      PROJECT_A_PATH: ${PROJECT_A_PATH:-/projects/default}
     volumes:
       - tinker_data:/data
-      # Mount Project A source code if needed for reading source context
-      - ${PROJECT_A_HOST_PATH:-./project-a}:/project-a:ro
+      # All managed projects for source access — each project's
+      # repo.projectPath points into /projects/<name>
+      - ${PROJECTS_HOST_PATH:-./projects}:/projects:ro
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://localhost:3200/health || exit 1"]
       interval: 30s

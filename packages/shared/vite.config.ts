@@ -9,7 +9,9 @@ export default defineConfig({
       fileName: "index",
     },
     rollupOptions: {
-      external: [],
+      // config-store uses node:fs/promises + node:path — keep them external
+      // so the lib stays usable in Node/Bun instead of being stubbed out
+      external: [/^node:/],
     },
   },
   plugins: [dts({ rollupTypes: true })],

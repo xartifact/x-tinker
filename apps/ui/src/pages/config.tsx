@@ -1,8 +1,8 @@
 import { trpc } from "../trpc";
 import { AgentConfigForm } from "../components/agent-config-form";
 import { LLMConfigForm } from "../components/llm-config-form";
-import { RepoConfigForm } from "../components/repo-config-form";
 import { ServerConfigForm } from "../components/server-config-form";
+import { ProjectsSection } from "../components/project-config-form";
 import type { AppConfig } from "@xartifact/x-tinker-shared";
 
 export function ConfigPage() {
@@ -23,8 +23,8 @@ export function ConfigPage() {
       ...partial,
       agent: { ...data.agent, ...partial.agent },
       llm: { ...data.llm, ...partial.llm },
-      repo: { ...data.repo, ...partial.repo },
       server: { ...data.server, ...partial.server },
+      projects: partial.projects ?? data.projects,
     };
     saveMutation.mutate(merged);
   };
@@ -36,6 +36,8 @@ export function ConfigPage() {
         <p className="text-muted-foreground mt-1">Configure the auto-fix pipeline</p>
       </div>
 
+      <ProjectsSection projects={data.projects} />
+
       <AgentConfigForm
         config={data.agent}
         onSave={(agent) => handleSave({ agent })}
@@ -45,12 +47,6 @@ export function ConfigPage() {
       <LLMConfigForm
         config={data.llm}
         onSave={(llm) => handleSave({ llm })}
-        saving={saveMutation.isPending}
-      />
-
-      <RepoConfigForm
-        config={data.repo}
-        onSave={(repo) => handleSave({ repo })}
         saving={saveMutation.isPending}
       />
 

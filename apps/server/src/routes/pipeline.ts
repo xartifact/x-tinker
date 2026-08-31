@@ -1,6 +1,5 @@
 import { Hono } from "hono";
-import { validateErrorEvent } from "@xartifact/x-tinker-shared";
-import type { ErrorEvent } from "@xartifact/x-tinker-shared";
+import { validateErrorEvent, createErrorEvent } from "@xartifact/x-tinker-shared";
 import { runPipeline } from "../pipeline/index.js";
 import { recordEvent } from "../pipeline/store.js";
 
@@ -19,7 +18,9 @@ pipelineRouter.post("/events", async (c) => {
     return c.json({ error: validationError }, 400);
   }
 
-  const event = body as ErrorEvent;
+  // Normalize: guarantee id (uuid) + timestamp exist, so events.id matches
+  // rawEvent.id and fixes.event_id stays a valid foreign key
+  const event = createErrorEvent(body as Parameters<typeof createErrorEvent>[0]);
   console.log(`[server] Received error event: ${event.id} — ${event.errorType}: ${event.message}`);
 
   // Persist immediately

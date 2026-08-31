@@ -141,17 +141,40 @@ export interface RepoConfig {
 }
 
 /**
- * Full app configuration stored on disk
+ * Per-project configuration — maps the projectId reported by the SDK
+ * to its source repository and fix settings.
+ */
+export interface ProjectConfig {
+  /** Unique project id — must match the projectId the SDK reports in ErrorEvent */
+  id: string;
+  /** Display name */
+  name: string;
+  /** Repository / source access config */
+  repo: RepoConfig;
+  /** Command to verify a fix, run in repo.projectPath. Empty = skip verification */
+  verifyCommand?: string;
+  /** Optional per-project agent override; falls back to the global agent config */
+  agent?: AgentConnection;
+}
+
+/**
+ * Full app configuration stored on disk.
+ *
+ * Agent and LLM are global defaults; each project only carries its repo
+ * location and (optionally) overrides the agent used to fix it.
  */
 export interface AppConfig {
   /** Coding Agent config for code modification (ACP/A2A) */
   agent: AgentConnection;
   /** LLM config for non-coding tasks (analysis, summarization) */
   llm: LLMConfig;
-  repo: RepoConfig;
+  /** Projects that can report errors and be fixed */
+  projects: ProjectConfig[];
   server: {
     port: number;
   };
+  /** @deprecated Legacy single-project field — migrated into `projects` on load, dropped on save */
+  repo?: RepoConfig;
 }
 
 /**
@@ -170,11 +193,18 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
     maxTokens: 2048,
     temperature: 0.1,
   },
-  repo: {
-    projectPath: "/Users/binzhan/Workspaces/github/xartifact/x-herald",
-    remote: "",
-    branchPrefix: "auto-fix",
-  },
+  projects: [
+    {
+      id: "default",
+      name: "Default Project",
+      repo: {
+        projectPath: "",
+        remote: "",
+        branchPrefix: "auto-fix",
+      },
+      verifyCommand: "",
+    },
+  ],
   server: {
     port: 3200,
   },

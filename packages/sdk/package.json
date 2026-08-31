@@ -17,7 +17,7 @@
     "url": "https://github.com/xartifact/x-tinker.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "files": [
     "dist"
@@ -27,7 +27,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@xartifact/x-tinker-shared": "workspace:*"
+    "@xartifact/x-tinker-shared": "0.1.2"
   },
   "peerDependencies": {
     "hono": "^4.12.27"

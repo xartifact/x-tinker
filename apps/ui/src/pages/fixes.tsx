@@ -1,6 +1,14 @@
+import { useState } from "react";
 import { trpc } from "../trpc";
 import { Badge } from "../components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "../components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/ui/select";
 import { Bug, CheckCircle, XCircle, Clock } from "lucide-react";
 
 const statusIcon: Record<string, typeof Bug> = {
@@ -31,7 +39,12 @@ function statusBadge(status: string) {
 }
 
 export function FixesPage() {
-  const { data, isLoading, error } = trpc.events.list.useQuery({ limit: 50 });
+  const [projectFilter, setProjectFilter] = useState<string>("all");
+  const { data: projects } = trpc.projects.list.useQuery();
+  const { data, isLoading, error } = trpc.events.list.useQuery({
+    limit: 50,
+    projectId: projectFilter === "all" ? undefined : projectFilter,
+  });
 
   if (isLoading) return <div className="text-muted-foreground p-4">Loading events...</div>;
   if (error) return <div className="text-destructive p-4">Error: {error.message}</div>;
@@ -40,9 +53,24 @@ export function FixesPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Fix History</h1>
-        <p className="text-muted-foreground mt-1">Recently received error events and their fix results</p>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">Fix History</h1>
+          <p className="text-muted-foreground mt-1">Recently received error events and their fix results</p>
+        </div>
+        <Select value={projectFilter} onValueChange={setProjectFilter}>
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Filter by project" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All projects</SelectItem>
+            {(projects ?? []).map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.name || p.id}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {items.length === 0 && (

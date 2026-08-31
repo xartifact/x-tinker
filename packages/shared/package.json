@@ -17,7 +17,7 @@
     "url": "https://github.com/xartifact/x-tinker.git"
   },
   "publishConfig": {
-    "registry": "https://npm.pkg.github.com"
+    "access": "public"
   },
   "files": [
     "dist"

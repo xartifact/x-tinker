@@ -9,6 +9,9 @@ export async function recordEvent(event: ErrorEvent): Promise<void> {
   const db = getDb();
   const ctx = event.sourceContext ?? { filePath: "unknown", line: 0, before: [], lineContent: "", after: [] };
   await db.insert(events).values({
+    // Store the event's own id — fixes.event_id references it, so it must
+    // match rawEvent.id or every recordFix violates the foreign key
+    id: event.id,
     projectId: event.projectId,
     errorType: event.errorType,
     message: event.message,
@@ -80,11 +83,12 @@ export interface EventWithFix {
   fix: FixResult | null;
 }
 
-export async function listEventsWithFixes(limit = 50): Promise<EventWithFix[]> {
+export async function listEventsWithFixes(limit = 50, projectId?: string): Promise<EventWithFix[]> {
   const db = getDb();
   const rows = await db
     .select()
     .from(events)
+    .where(projectId ? eq(events.projectId, projectId) : undefined)
     .orderBy(desc(events.createdAt))
     .limit(limit);
 

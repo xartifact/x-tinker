@@ -6,6 +6,7 @@
  */
 
 import type { ErrorEvent, FixPatch, FixResult, LLMConfig } from "@xartifact/x-tinker-shared";
+import { loadConfig, configExists, findProject, defaultProject } from "@xartifact/x-tinker-shared";
 import { LLMClient, fixWithAgent } from "@xartifact/x-tinker-core";
 import { generatePatch } from "@xartifact/x-tinker-core";
 import type { PatchPromptContext, AgentFixRequest } from "@xartifact/x-tinker-core";
@@ -14,7 +15,6 @@ import { applyPatch } from "./apply-patch.js";
 import { verifyFix } from "./verify.js";
 import { commitFix } from "./commit.js";
 import { recordFix } from "./store.js";
-import { loadConfig } from "../config/store.js";
 
 /**
  * Resolve LLM client from the saved AppConfig.llm config.
@@ -40,24 +40,56 @@ async function resolveLLMClient(): Promise<LLMClient> {
   } as LLMConfig);
 }
 
+function failedResult(event: ErrorEvent, error: string): FixResult {
+  return {
+    eventId: event.id,
+    patch: { diff: "", files: [], summary: "" },
+    status: "failed",
+    error,
+  };
+}
+
 /**
  * Run the full fix pipeline for an error event
  */
 export async function runPipeline(event: ErrorEvent): Promise<FixResult> {
-  const projectPath = process.env.PROJECT_A_PATH;
-  if (!projectPath) {
-    throw new Error("PROJECT_A_PATH environment variable is required — set it to Project A's root directory");
+  const configRoot = process.env.CONFIG_ROOT ?? process.cwd();
+  const appConfig = await loadConfig(configRoot);
+
+  // Route the event to its project. Policy:
+  //  - config.json exists (explicit setup): strict match by projectId —
+  //    unknown ids fail closed rather than fixing the wrong repo.
+  //  - no config.json (env-only deployment, e.g. fresh docker): any projectId
+  //    maps onto the default project + PROJECT_A_PATH — legacy single-project
+  //    behavior.
+  const strict = await configExists(configRoot);
+  let project = findProject(appConfig, event.projectId);
+  if (!project && !strict) {
+    project = defaultProject(appConfig);
+  }
+  if (!project) {
+    const result = failedResult(event, `Unknown projectId "${event.projectId}" — no matching project in config`);
+    await recordFix(result);
+    return result;
   }
 
-  console.log(`[pipeline] Step 1/7: Analyzing error event ${event.id}`);
+  const envPath = process.env.PROJECT_A_PATH?.trim() ?? "";
+  const projectPath = project.repo.projectPath?.trim() || (project.id === "default" ? envPath : "");
+  if (!projectPath) {
+    const result = failedResult(event, `Project "${project.id}" (${project.name}) has no repo.projectPath configured`);
+    await recordFix(result);
+    return result;
+  }
+
+  console.log(`[pipeline] Step 1/7: Analyzing error event ${event.id} (project: ${project.id})`);
   const { sourceContext } = event;
 
   console.log(`[pipeline] Step 2/7: Reading source context from ${projectPath}/${sourceContext.filePath}`);
   const sourceCode = await readSourceContext(projectPath, sourceContext.filePath, sourceContext.line);
 
-  const configRoot = process.env.CONFIG_ROOT ?? process.cwd();
-  const appConfig = await loadConfig(configRoot);
-  const agentProvider = appConfig.agent.provider;
+  // Per-project agent override, falling back to the global agent config
+  const agentConn = project.agent ?? appConfig.agent;
+  const agentProvider = agentConn.provider;
 
   let patch: FixPatch;
 
@@ -66,7 +98,7 @@ export async function runPipeline(event: ErrorEvent): Promise<FixResult> {
     console.log(`[pipeline] Step 3-4/7: Delegating fix to agent "${agentProvider}"`);
 
     const agentConfig: Record<string, string> = {};
-    for (const pair of appConfig.agent.config.split(";").filter(Boolean)) {
+    for (const pair of agentConn.config.split(";").filter(Boolean)) {
       const [k, v] = pair.split("=");
       if (k && v) agentConfig[k.trim()] = v.trim();
     }
@@ -145,7 +177,7 @@ export async function runPipeline(event: ErrorEvent): Promise<FixResult> {
   }
 
   console.log(`[pipeline] Step 5/7: Verifying fix`);
-  const verificationOutput = await verifyFix(projectPath, event);
+  const verificationOutput = await verifyFix(projectPath, event, project.verifyCommand);
 
   const isVerified = verificationOutput === null;
   console.log(`[pipeline] Verification: ${isVerified ? "PASSED" : "FAILED — " + verificationOutput}`);
