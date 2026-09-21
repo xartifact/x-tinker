@@ -1,12 +1,20 @@
 import type { AgentProvider } from "./agent-types.js";
 import type { AgentFixRequest, AgentFixResult } from "./agent-types.js";
 import { AcpAgentProvider } from "./providers/acp-agent.js";
+import { ClaudeCodeAgentProvider } from "./providers/claude-code-agent.js";
+import { OpenCodeAgentProvider } from "./providers/opencode-agent.js";
 
 /**
- * Registry of available Coding Agent providers
+ * Registry of available Coding Agent providers.
+ *
+ * Keys are the names callers pass to `createAgentProvider` / `fixWithAgent`,
+ * and each provider's own `name` field repeats its key so a resolved instance
+ * can report which provider produced a result.
  */
 const AGENT_REGISTRY: Record<string, AgentProviderConstructor> = {
   acp: AcpAgentProvider,
+  "claude-code": ClaudeCodeAgentProvider,
+  opencode: OpenCodeAgentProvider,
 };
 
 export interface AgentProviderConstructor {

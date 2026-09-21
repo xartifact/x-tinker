@@ -9,3 +9,5 @@ export { AnthropicProvider } from "./providers/anthropic.js";
 export type { AgentProvider, AgentFixRequest, AgentFixResult } from "./agent-types.js";
 export { registerAgentProvider, createAgentProvider, fixWithAgent } from "./agent-registry.js";
 export { AcpAgentProvider } from "./providers/acp-agent.js";
+export { ClaudeCodeAgentProvider } from "./providers/claude-code-agent.js";
+export { OpenCodeAgentProvider } from "./providers/opencode-agent.js";
