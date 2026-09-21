@@ -21,6 +21,8 @@ COPY packages/db/src ./packages/db/src
 COPY apps/server/src ./apps/server/src
 COPY apps/ui ./apps/ui
 
+COPY packages/shared/vite.config.ts ./packages/shared/
+RUN cd packages/shared && bun run build
 RUN cd apps/ui && bun run build
 
 # ── 运行 ──
@@ -39,6 +41,12 @@ COPY packages/shared/src ./packages/shared/src
 COPY packages/core/src ./packages/core/src
 COPY packages/db/src ./packages/db/src
 COPY apps/server/src ./apps/server/src
+# `@xartifact/x-tinker-shared` resolves through its `main`/`exports` field, which
+# point at `dist/index.js` — not `src/`. Copying only the source tree left the
+# module unresolvable at runtime ("Cannot find module
+# '@xartifact/x-tinker-shared'") and the container crash-looped. core/db are
+# unaffected because their `main` is `src/index.ts`.
+COPY --from=builder /app/packages/shared/dist ./packages/shared/dist
 COPY --from=builder /app/apps/ui/dist ./apps/ui/dist
 
 ENV PORT=3200
