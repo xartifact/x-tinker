@@ -182,7 +182,10 @@ export interface AppConfig {
  */
 export const DEFAULT_APP_CONFIG: AppConfig = {
   agent: {
-    provider: "acp",
+    // pi edits the working tree directly and reports a real `git diff HEAD`,
+    // so it is the default delegate. ACP / OpenCode / Claude Code stay
+    // available as switchable fallbacks via the agent config.
+    provider: "pi",
     config: "",
   },
   llm: {

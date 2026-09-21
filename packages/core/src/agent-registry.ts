@@ -1,5 +1,6 @@
 import type { AgentProvider } from "./agent-types.js";
 import type { AgentFixRequest, AgentFixResult } from "./agent-types.js";
+import { PiAgentProvider } from "./providers/pi-agent.js";
 import { AcpAgentProvider } from "./providers/acp-agent.js";
 import { ClaudeCodeAgentProvider } from "./providers/claude-code-agent.js";
 import { OpenCodeAgentProvider } from "./providers/opencode-agent.js";
@@ -10,12 +11,20 @@ import { OpenCodeAgentProvider } from "./providers/opencode-agent.js";
  * Keys are the names callers pass to `createAgentProvider` / `fixWithAgent`,
  * and each provider's own `name` field repeats its key so a resolved instance
  * can report which provider produced a result.
+ *
+ * `pi` leads: it edits the working tree directly and reports a real
+ * `git diff HEAD`, so it is the default delegate (see DEFAULT_AGENT_PROVIDER).
+ * The others remain available as switchable fallbacks.
  */
 const AGENT_REGISTRY: Record<string, AgentProviderConstructor> = {
+  pi: PiAgentProvider,
   acp: AcpAgentProvider,
   "claude-code": ClaudeCodeAgentProvider,
   opencode: OpenCodeAgentProvider,
 };
+
+/** Provider used when a project/global agent config names none. */
+export const DEFAULT_AGENT_PROVIDER = "pi";
 
 export interface AgentProviderConstructor {
   new (config: Record<string, string>): AgentProvider;
